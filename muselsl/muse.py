@@ -251,12 +251,15 @@ class Muse():
 
         print("Using preset {}".format(preset))
 
+        if type(preset) == int:
+            preset = str(preset)
+
         if preset in ('20','21','22','23','31','32','50','51','52','60','61','63','AB','AD'):
             self._write_cmd_str('p' + preset)
         elif preset == '53':
             raise Exception('Preset 53 has unidentified behavior', preset)
         else:
-            raise Exception('Unknown preset %s', preset)
+            raise Exception('Unknown preset %s' % preset)
 
     def disconnect(self):
         """disconnect."""
