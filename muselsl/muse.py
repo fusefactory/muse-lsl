@@ -56,8 +56,8 @@ class Muse():
 
         self.interface = interface
         self.time_func = time_func
-
         self.backend = helper.resolve_backend(backend)
+        self.preset = preset
 
     def connect(self, interface=None, backend='auto'):
         """Connect to the device"""
@@ -81,6 +81,8 @@ class Muse():
 
                 self.adapter.start()
                 self.device = self.adapter.connect(self.address)
+                if(self.preset != None):
+                    self.select_preset(self.preset)
 
                 # subscribes to EEG stream
                 if self.enable_eeg:
@@ -110,7 +112,7 @@ class Muse():
                 self.ask_reset()
                 sleep(2)
                 self.device = self.adapter.connect(self.address)
-                self.select_preset(preset=21)
+                self.select_preset(self.preset)
 
                 # subscribes to EEG stream
                 if self.enable_eeg:
@@ -240,16 +242,12 @@ class Muse():
         self._write_cmd_str('k')
 
     def select_preset(self, preset=21):
-        """Setting preset for headband configuration
+        """Set preset for headband configuration
 
-        See details on https://goo.gl/FPN1ib
+        See details here https://articles.jaredcamins.com/figuring-out-bluetooth-low-energy-part-2-750565329a7d
         For 2016 headband, possible choice are 'p20' and 'p21'.
         Untested but possible values include 'p22','p23','p31','p32','p50','p51','p52','p53','p60','p61','p63','pAB','pAD'
         Default is 'p21'."""
-        if type(preset) is int:
-            preset = str(preset)
-        if preset[0] == 'p':
-            preset = preset[1:]
 
         print("Using preset {}".format(preset))
 

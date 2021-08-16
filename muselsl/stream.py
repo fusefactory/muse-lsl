@@ -3,6 +3,7 @@ import subprocess
 from sys import platform
 from time import time
 from functools import partial
+from shutil import which
 
 from pylsl import StreamInfo, StreamOutlet
 import pygatt
@@ -26,6 +27,10 @@ def _print_muse_list(muses):
 
 # Returns a list of available Muse devices.
 def list_muses(backend='auto', interface=None):
+    if backend == 'auto' and which('bluetoothctl') is not None:
+        print("Backend was 'auto' and bluetoothctl was found, using to list muses...")
+        return _list_muses_bluetoothctl(MUSE_SCAN_TIMEOUT)
+
     backend = helper.resolve_backend(backend)
 
     if backend == 'gatt':
@@ -49,7 +54,7 @@ def list_muses(backend='auto', interface=None):
         if backend == 'gatt':
             print('pygatt failed to scan for BLE devices. Trying with '
                   'bluetoothctl.')
-            return  _list_muses_bluetoothctl(MUSE_SCAN_TIMEOUT)
+            return _list_muses_bluetoothctl(MUSE_SCAN_TIMEOUT)
         else:
             raise e
 

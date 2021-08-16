@@ -184,6 +184,7 @@ class CLI:
             default=None,
             help="Name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
+
         from . import record_direct
         record_direct(args.duration, args.address, args.filename, args.backend,
                       args.interface, args.name)
