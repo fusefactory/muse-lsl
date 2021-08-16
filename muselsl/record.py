@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
-from typing import Union, List
+from typing import Union, List, Optional
 from pathlib import Path
 from pylsl import StreamInlet, resolve_byprop
 from sklearn.linear_model import LinearRegression
@@ -18,7 +18,7 @@ def record(
     filename=None,
     dejitter=False,
     data_source="EEG",
-    continuous: bool = False,
+    continuous: bool = True,
 ) -> None:
     chunk_length = LSL_EEG_CHUNK
     if data_source == "PPG":
@@ -70,6 +70,7 @@ def record(
     markers = []
     t_init = time()
     time_correction = inlet.time_correction()
+    last_written_timestamp = None
     print('Start recording at time t=%.3f' % t_init)
     print('Time correction: ', time_correction)
     while (time() - t_init) < duration:
@@ -86,8 +87,8 @@ def record(
                 if timestamp:
                     markers.append([marker, timestamp])
 
-            # Save every 2500 samples (at the Muse sampling freq of 250Hz this is every 10s)
-            if continuous and len(res) % 2500 == 0:
+            # Save every 5s
+            if continuous and (last_written_timestamp is None or last_written_timestamp + 5 < timestamps[-1]):
                 _save(
                     filename,
                     res,
@@ -97,7 +98,9 @@ def record(
                     inlet_marker,
                     markers,
                     ch_names,
+                    last_written_timestamp=last_written_timestamp,
                 )
+                last_written_timestamp = timestamps[-1]
 
         except KeyboardInterrupt:
             break
@@ -128,6 +131,7 @@ def _save(
     inlet_marker,
     markers,
     ch_names: List[str],
+    last_written_timestamp: Optional[float] = None,
 ):
     res = np.concatenate(res, axis=0)
     timestamps = np.array(timestamps) + time_correction
@@ -157,13 +161,19 @@ def _save(
             for ii in range(n_markers):
                 data.loc[ix, "Marker%d" % ii] = marker[0][ii]
 
-    data.to_csv(filename, float_format='%.3f', index=False)
-
+    # If file doesn't exist, create with headers
+    # If it does exist, just append new rows
+    if not Path(filename).exists():
+        # print("Saving whole file")
+        data.to_csv(filename, float_format='%.3f', index=False)
+    else:
+        # print("Appending file")
+        # truncate already written timestamps
+        data = data[data['timestamps'] > last_written_timestamp]
+        data.to_csv(filename, float_format='%.3f', index=False, mode='a', header=False)
 
 
 # Rercord directly from a Muse without the use of LSL
-
-
 def record_direct(duration,
                   address,
                   filename=None,
@@ -176,7 +186,7 @@ def record_direct(duration,
         ))
 
     if not address:
-        found_muse = find_muse(name)
+        found_muse = find_muse(name, backend)
         if not found_muse:
             print('Muse could not be found')
             return
@@ -197,7 +207,7 @@ def record_direct(duration,
         eeg_samples.append(new_samples)
         timestamps.append(new_timestamps)
 
-    muse = Muse(address, save_eeg)
+    muse = Muse(address, save_eeg, backend=backend)
     muse.connect()
     muse.start()
 
