@@ -63,6 +63,11 @@ class CLI:
             default=None,
             help=
             "The interface to use, 'hci0' for gatt or a com port for bgapi.")
+        parser.add_argument("-P",
+            "--preset",
+            type=int,
+            default=None,
+            help="Select preset which dictates data channels to be streamed")
         parser.add_argument(
             "-p",
             "--ppg",
@@ -87,11 +92,12 @@ class CLI:
             dest='disable_eeg',
             action='store_true',
             help="Disable EEG data")
+
         args = parser.parse_args(sys.argv[2:])
         from . import stream
 
         stream(args.address, args.backend, args.interface, args.name, args.ppg,
-               args.acc, args.gyro, args.disable_eeg)
+               args.acc, args.gyro, args.disable_eeg, args.preset)
 
     def record(self):
         parser = argparse.ArgumentParser(
@@ -175,9 +181,10 @@ class CLI:
             default=None,
             help="Name of the recording file.")
         args = parser.parse_args(sys.argv[2:])
+
         from . import record_direct
-        record_direct(args.address, args.backend, args.interface, args.name,
-                      args.duration, args.filename)
+        record_direct(args.duration, args.address, args.filename, args.backend,
+                      args.interface, args.name)
 
     def view(self):
         parser = argparse.ArgumentParser(

@@ -3,6 +3,7 @@ import subprocess
 from sys import platform
 from time import time, sleep
 from functools import partial
+from shutil import which
 
 from pylsl import StreamInfo, StreamOutlet
 import pygatt
@@ -25,6 +26,10 @@ def _print_muse_list(muses):
 
 # Returns a list of available Muse devices.
 def list_muses(backend='auto', interface=None):
+    if backend == 'auto' and which('bluetoothctl') is not None:
+        print("Backend was 'auto' and bluetoothctl was found, using to list muses...")
+        return _list_muses_bluetoothctl(MUSE_SCAN_TIMEOUT)
+
     backend = helper.resolve_backend(backend)
 
     if backend == 'gatt':
@@ -46,7 +51,7 @@ def list_muses(backend='auto', interface=None):
         if backend == 'gatt':
             print('pygatt failed to scan for BLE devices. Trying with '
                   'bluetoothctl.')
-            return  _list_muses_bluetoothctl(MUSE_SCAN_TIMEOUT)
+            return _list_muses_bluetoothctl(MUSE_SCAN_TIMEOUT)
         else:
             raise e
 
@@ -103,8 +108,8 @@ def _list_muses_bluetoothctl(timeout, verbose=False):
 
 
 # Returns the address of the Muse with the name provided, otherwise returns address of first available Muse.
-def find_muse(name=None):
-    muses = list_muses()
+def find_muse(name=None, backend='auto'):
+    muses = list_muses(backend)
     if name:
         for muse in muses:
             if muse['name'] == name:
@@ -123,6 +128,7 @@ def stream(
     acc_enabled=False,
     gyro_enabled=False,
     eeg_disabled=False,
+    preset=None,
     timeout=AUTO_DISCONNECT_DELAY,
 ):
     # If no data types are enabled, we warn the user and return immediately.
@@ -133,7 +139,7 @@ def stream(
     # For any backend except bluemuse, we will start LSL streams hooked up to the muse callbacks.
     if backend != 'bluemuse':
         if not address:
-            found_muse = find_muse(name)
+            found_muse = find_muse(name, backend)
             if not found_muse:
                 return
             else:
@@ -206,7 +212,7 @@ def stream(
         push_gyro = partial(push, outlet=gyro_outlet) if gyro_enabled else None
 
         muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
-                    backend=backend, interface=interface, name=name)
+                    backend=backend, interface=interface, name=name, preset=preset)
 
         didConnect = muse.connect()
 
