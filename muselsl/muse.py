@@ -4,6 +4,7 @@ import numpy as np
 from time import time, sleep
 from sys import platform
 import subprocess
+from . import backends
 from . import helper
 from .constants import *
 
@@ -23,7 +24,7 @@ class Muse():
                  interface=None,
                  time_func=time,
                  name=None,
-                 preset=None):
+                 preset=21):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
@@ -51,6 +52,7 @@ class Muse():
         self.enable_acc = not callback_acc is None
         self.enable_gyro = not callback_gyro is None
         self.enable_ppg = not callback_ppg is None
+        self.preset = preset
 
         self.interface = interface
         self.time_func = time_func
@@ -71,6 +73,8 @@ class Muse():
                 if self.backend == 'gatt':
                     self.interface = self.interface or 'hci0'
                     self.adapter = pygatt.GATTToolBackend(self.interface)
+                elif self.backend == 'bleak':
+                    self.adapter = backends.BleakBackend()
                 else:
                     self.adapter = pygatt.BGAPIBackend(
                         serial_port=self.interface)
@@ -212,6 +216,7 @@ class Muse():
         self.last_tm = 0
         self.last_tm_ppg = 0
         self._init_control()
+        self.select_preset(self.preset)
         self.resume()
 
     def resume(self):
@@ -244,14 +249,17 @@ class Muse():
         Untested but possible values include 'p22','p23','p31','p32','p50','p51','p52','p53','p60','p61','p63','pAB','pAD'
         Default is 'p21'."""
 
-        if type(preset) is int:
+        print("Using preset {}".format(preset))
+
+        if type(preset) == int:
             preset = str(preset)
-        if preset[0] == 'p':
-            preset = preset[1:]
-        if str(preset) != '21':
-            print('Sending command for non-default preset: p' + preset)
-        preset = bytes(preset, 'utf-8')
-        self._write_cmd([0x04, 0x70, *preset, 0x0a])
+
+        if preset in ('20','21','22','23','31','32','50','51','52','60','61','63','AB','AD'):
+            self._write_cmd_str('p' + preset)
+        elif preset == '53':
+            raise Exception('Preset 53 has unidentified behavior', preset)
+        else:
+            raise Exception('Unknown preset %s' % preset)
 
     def disconnect(self):
         """disconnect."""

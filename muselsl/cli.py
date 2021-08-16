@@ -63,11 +63,6 @@ class CLI:
             default=None,
             help=
             "The interface to use, 'hci0' for gatt or a com port for bgapi.")
-        parser.add_argument("-P",
-            "--preset",
-            type=int,
-            default=None,
-            help="Select preset which dictates data channels to be streamed")
         parser.add_argument(
             "-p",
             "--ppg",
@@ -92,9 +87,17 @@ class CLI:
             dest='disable_eeg',
             action='store_true',
             help="Disable EEG data")
+        parser.add_argument(
+            "-P",
+            "--preset",
+            type=str,
+            default="21",
+            help="Select preset which dictates data channels to be streamed")
 
         args = parser.parse_args(sys.argv[2:])
         from . import stream
+
+        print("CLI Preset {}".format(args.preset))
 
         stream(args.address, args.backend, args.interface, args.name, args.ppg,
                args.acc, args.gyro, args.disable_eeg, args.preset)

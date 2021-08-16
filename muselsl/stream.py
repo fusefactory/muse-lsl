@@ -1,13 +1,14 @@
 import re
 import subprocess
 from sys import platform
-from time import time, sleep
+from time import time
 from functools import partial
 from shutil import which
 
 from pylsl import StreamInfo, StreamOutlet
 import pygatt
 
+from . import backends
 from . import helper
 from .muse import Muse
 from .constants import MUSE_SCAN_TIMEOUT, AUTO_DISCONNECT_DELAY,  \
@@ -39,7 +40,9 @@ def list_muses(backend='auto', interface=None):
         print('Starting BlueMuse, see BlueMuse window for interactive list of devices.')
         subprocess.call('start bluemuse:', shell=True)
         return
-    else:
+    elif backend == 'bleak':
+        adapter = backends.BleakBackend()
+    elif backend == 'bgapi':
         adapter = pygatt.BGAPIBackend(serial_port=interface)
 
     try:
@@ -128,7 +131,7 @@ def stream(
     acc_enabled=False,
     gyro_enabled=False,
     eeg_disabled=False,
-    preset=None,
+    preset=21,
     timeout=AUTO_DISCONNECT_DELAY,
 ):
     # If no data types are enabled, we warn the user and return immediately.
@@ -230,7 +233,7 @@ def stream(
 
             while time() - muse.last_timestamp < timeout:
                 try:
-                    sleep(1)
+                    backends.sleep(1)
                 except KeyboardInterrupt:
                     muse.stop()
                     muse.disconnect()
@@ -247,7 +250,7 @@ def stream(
         subprocess.call('start bluemuse://setting?key=gyroscope_enabled!value={}'.format('true' if gyro_enabled else 'false'), shell=True)
 
         muse = Muse(address=address, callback_eeg=None, callback_ppg=None, callback_acc=None, callback_gyro=None,
-                    backend=backend, interface=interface, name=name)
+                    backend=backend, interface=interface, name=name, preset=preset)
         muse.connect()
 
         if not address and not name:
