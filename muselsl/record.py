@@ -7,7 +7,7 @@ from pylsl import StreamInlet, resolve_byprop
 from sklearn.linear_model import LinearRegression
 from time import time, strftime, gmtime
 from .stream import find_muse
-from . import backends
+from .backends import bleak
 from .muse import Muse
 from .constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_CHUNK, LSL_GYRO_CHUNK
 
@@ -217,7 +217,7 @@ def record_direct(duration,
 
     while (time() - t_init) < duration:
         try:
-            backends.sleep(1)
+            bleak.sleep(1)
         except KeyboardInterrupt:
             break
 

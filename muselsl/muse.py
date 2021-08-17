@@ -4,7 +4,7 @@ import numpy as np
 from time import time, sleep
 from sys import platform
 import subprocess
-from . import backends
+from .backends import bleak
 from . import helper
 from .constants import *
 
@@ -74,7 +74,7 @@ class Muse():
                     self.interface = self.interface or 'hci0'
                     self.adapter = pygatt.GATTToolBackend(self.interface)
                 elif self.backend == 'bleak':
-                    self.adapter = backends.BleakBackend()
+                    self.adapter = bleak.Adapter()
                 else:
                     self.adapter = pygatt.BGAPIBackend(
                         serial_port=self.interface)
