@@ -2,6 +2,8 @@ import asyncio
 import atexit
 import time
 
+from . import base
+
 try:
     import bleak
 except ModuleNotFoundError as error:
@@ -19,7 +21,7 @@ def sleep(seconds):
 
 class Adapter:
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.connected = set()
         atexit.register(self.stop)
 
@@ -38,6 +40,7 @@ class Adapter:
             device.disconnect()
 
     def scan(self, timeout=10):
+        print('Searching for Muses, this may take up to 10 seconds...')
         if isinstance(bleak, ModuleNotFoundError):
             raise bleak
         scanner = bleak.BleakScanner()
