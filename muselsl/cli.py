@@ -91,7 +91,7 @@ class CLI:
             "-P",
             "--preset",
             type=str,
-            default="21",
+            default=None,
             help="Select preset which dictates data channels to be streamed")
 
         args = parser.parse_args(sys.argv[2:])

@@ -52,7 +52,6 @@ class Muse():
         self.enable_acc = not callback_acc is None
         self.enable_gyro = not callback_gyro is None
         self.enable_ppg = not callback_ppg is None
-        self.preset = preset
 
         self.interface = interface
         self.time_func = time_func
@@ -112,7 +111,8 @@ class Muse():
                 self.ask_reset()
                 sleep(2)
                 self.device = self.adapter.connect(self.address)
-                self.select_preset(self.preset)
+                if(self.preset != None):
+                    self.select_preset(self.preset)
 
                 # subscribes to EEG stream
                 if self.enable_eeg:
@@ -216,7 +216,8 @@ class Muse():
         self.last_tm = 0
         self.last_tm_ppg = 0
         self._init_control()
-        self.select_preset(self.preset)
+        if(self.preset != None):
+            self.select_preset(self.preset)
         self.resume()
 
     def resume(self):
